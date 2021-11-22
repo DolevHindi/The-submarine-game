@@ -1,0 +1,418 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="Json.js"></script> <!--json file-->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> <!--JQuery-->
+
+
+    <style type="text/css">
+
+        label{
+            color:red;
+            font-weight:bold;
+            font-family:Calibri;
+        }
+        #width, #height {
+            width: 30px;
+        }
+
+        #game {
+            position: relative;
+            left: 200px;
+        }
+
+        #score p {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        #header {
+            text-align: center;
+        }
+
+        #game > div {
+            float: left;
+            margin: 0 auto;
+        }
+
+        table {
+            border: 10px solid black;
+        }
+
+        td {
+            height: 20px;
+            width: 20px;
+            background-color: yellow;
+        }
+
+        #run {
+            height: 40px;
+            width: 80px;
+            background-color: deepskyblue;
+            border-radius: 5px;
+        }
+
+        #computer td:hover {
+            background-color: darkseagreen;
+        }
+
+        .sub {
+            background-color: black
+        }
+
+
+    </style>
+
+</head>
+<body onload="load()">
+
+
+    <div id="container">
+
+        <div id="header">
+
+            <label for="width">width: </label>
+            <input type="number" id="width" value="15" min="10" max="20" onchange="check(value)">
+            <br />
+            <label for="height">height:</label>
+            <input type="number" id="height" value="15" min="10" max="20" onchange="check(value)">
+            <br />
+        
+            <input type="submit" id="run" value="Play" onclick="init()" />
+            <label id="score"></label>
+
+        </div><!--header-->
+
+        <div id="game">
+            <div id="player"></div>
+            <div id="computer"> </div>
+            <div id="divcheat"> </div>
+
+        </div><!--game-->
+
+
+    </div> <!--container-->
+    
+    <script>
+        $(document).ready(function () {
+            $(document).on("click", "#cheat", cheating);
+          
+
+
+        });
+        objArr = [],
+            randomArr = [];
+        redC = [];
+        greyC = [];
+        redP = [];
+        greyP = [];
+        Pcount = 0;
+        Ccount = 0;
+        score = 0;
+        width = parseInt(document.getElementById("width").value);
+        height = parseInt(document.getElementById("height").value);
+
+        //slot = width * height;
+
+        function init() {
+            width = parseInt(document.getElementById("width").value);
+            height = parseInt(document.getElementById("height").value);
+            slot = width * height;
+            PArr = buildBlackArr(0);
+            CArr = buildBlackArr(1000);
+            renderPlayer(PArr, height, width);
+            renderComputer(CArr, height, width);
+            localStorage.clear();
+            document.getElementById("score").innerHTML = '<p> score: ' + score + '</p>';
+            redC = [];
+            greyC = [];
+            redP = [];
+            greyP = [];
+            Pcount = 0;
+            Ccount = 0;
+            score = 0;
+
+        }
+
+        //----------------------------------------------פונקציות-------------------------------------------------
+
+
+        function f1(x, pos) {// שינוי ההמשבצת לאדום
+            $(x).removeAttr("onclick");
+            redC.push(pos);
+            score += 10;
+            console.log(Pcount);
+            document.getElementById("score").innerHTML = '<p> score: ' + score + '</p>';
+            x.style.backgroundColor = "red";
+            $(x).removeClass("sub_ch");
+
+            Pcount += countingDuplicate(CArr, pos);
+
+            if (Pcount == 26) {
+                win();
+                localStorage.clear();
+            }
+
+            setTimeout("f3()", 1000);
+        }
+
+
+        function f2(y) {//שינוי הצבע לאפור
+            $(y).removeAttr("onclick");
+            score--;
+            document.getElementById("score").innerHTML = '<p> score: ' + score + '</p>';
+            greyC.push(y.id);
+            y.style.backgroundColor = "grey";
+            setTimeout("f3()", 1000);
+        }
+
+
+        function f3() {
+            rand = Math.floor(Math.random() * slot);
+            if (randomArr.includes(rand)) {
+                f3();
+                return;
+            }
+
+            randomArr.push(rand);
+            bool = PArr.includes(rand);
+            if (bool == true) {
+                $("#" + rand).css("background-color", "red");
+                let b = countingDuplicate(PArr, rand);// b save the time- rand exist in the arr
+                Ccount = b + Ccount;
+                redP.push(rand);
+
+                if (Ccount == 26) {
+                    alert("you lose!");
+                    localStorage.clear();
+                }
+            }
+            else {
+                $("#" + rand).css("background-color", "grey");
+                greyP.push(rand);
+            }
+
+
+        }
+
+        function buildBlackArr(num) {  //------------------------------------------בניית מערך שמחזיק את המשבצות השחורות
+
+            let Arr = [];
+            let k = 0;
+            for (var i = 0; i < submarinesArr.length; i++) {
+                for (var j = 0; j < submarinesArr[i].amount; j++) {
+                    let direction = Math.floor(Math.random() * 2);
+                    Arr[k] = buildingSub(submarinesArr[i].size, direction, num);
+                    k++;
+                }
+            }
+            narr = unitarrs(Arr);
+            return narr;
+        }
+
+        // בונה את התאים השחורים ווהצוללות ושומרת לתוך מערך
+        function buildingSub(size, direction, num) {
+            arr = [];
+            if (direction == 0) {// צוללת מאוזנת
+                let place = Math.floor(Math.random() * width) + (width * Math.ceil(Math.random() * (height - size)));
+                place += num;
+                for (var i = 0; i < size; i++) {
+                    arr[i] = place;
+                    place += width;
+                }
+            }
+            if (direction == 1) {// צוללת מאונכת
+                let place = Math.ceil(Math.random() * (width - size)) + (width * Math.floor(Math.random() * height));
+                place += num;
+                for (var i = 0; i < size; i++) {
+                    arr[i] = place;
+                    place++;
+                }
+            }
+            return arr;
+
+        }
+
+
+        function unitarrs(blackArr) {
+            arr = []
+            for (var i = 0; i < blackArr.length; i++) {
+                for (var j = 0; j < blackArr[i].length; j++) {
+                    arr.push(blackArr[i][j]);
+                }
+            }
+            return arr;
+
+        }
+
+        function cheating() {
+
+            $(".sub_ch").css("background-color", "black");
+
+        }
+
+        function countingDuplicate(array, value) {
+            var n = 0;
+            for (i = 0; i < array.length; i++) {
+                if (array[i] == value) { n++ }
+            }
+            return n;
+        }
+
+        window.onbeforeunload = function () {  //function run when refresh/exit page
+            if (greyC.length == 0 & redC.length == 0) { return }
+            computer = {
+                grey: greyC,// the grey in the computer board
+                red: redC,// the red in the computer board
+                black: CArr,// the black in the computer board
+                count: Ccount,
+                score: 0,
+
+            }
+            player = {
+                grey: greyP,// the grey in the player board
+                red: redP,// the red in the player board
+                black: PArr,// the black in the player board
+                count: Pcount,
+                height: height,
+                width: width,
+                score: score,
+            }
+            objArr.push(player);
+            objArr.push(computer);
+
+            strobj = JSON.stringify(objArr);
+            localStorage["object"] = strobj;
+
+        };
+
+        function load() {
+            if (localStorage["object"] != null) {
+                object = JSON.parse(localStorage["object"]);
+                let check = confirm("תרצה להמשיך מאיפה שהפסקת?");
+
+                if (check) {
+                    width = object[0].width;
+                    height = object[0].height;
+                    renderPlayer(object[0].black, height, width);
+                    renderComputer(object[1].black, object[0].height, object[0].width);
+                    painting(object[0].red, object[0].grey);
+                    painting(object[1].red, object[1].grey);
+                    redC = object[1].red;
+                    greyC = object[1].grey;
+                    redP = object[0].red;
+                    greyP = object[0].grey;
+                    score = object[0].score;
+                    Pcount = object[0].count;
+                    Ccount = object[1].count;
+                    slot = width * height;
+
+                }
+                else {
+
+                }
+
+            }
+            else {
+                object = [];
+            }
+
+        }
+
+        function renderPlayer(black, heightp, widthp) {
+
+            position = 0;
+            str = "";
+            PArr = black;
+
+            str += "<table>"
+            for (var i = 0; i < heightp; i++) {
+                str += "<tr>";
+                for (var j = 0; j < widthp; j++) {
+
+                    x = PArr.includes(position);
+                    if (x == true) {
+                        str += '<td class="sub"  id= "' + position + '"></td>';
+                    }
+
+                    else {
+                        str += '<td  id= "' + position + '"></td>';
+                    }
+                    position++;
+
+                }
+                str += "</tr>";
+            }
+            str += "</table>";
+            document.getElementById("player").innerHTML = str;
+        }
+
+        function renderComputer(black, heightp, widthp) {
+            positionC = 1000;
+            strC = "";
+            document.getElementById("divcheat").innerHTML = '<input type="button" id="cheat" value="cheat" />';
+
+            CArr = black;
+            strC += "<table>"
+            for (var i = 0; i < heightp; i++) {
+                strC += "<tr>";
+                for (var j = 0; j < widthp; j++) {
+
+                    x = CArr.includes(positionC);
+                    if (x == true) {
+                        strC += '<td id="' + positionC + '" class="sub_ch" onclick= "f1(this,' + positionC + ')"></td>';
+                    }
+
+                    else {
+                        strC += '<td id="' + positionC + '" onclick= "f2(this)"></td>';
+                    }
+                    positionC++;
+
+                }
+                strC += "</tr>";
+            }
+            strC += "</table>";
+            document.getElementById("computer").innerHTML = strC;
+
+        }
+
+        function painting(red, grey) {
+            for (var i = 0; i < red.length; i++) {
+                $("#" + red[i]).css("background-color", "red");
+                $("#" + red[i]).removeAttr("onclick");
+                $("#" + red[i]).removeClass("sub_ch");
+            }
+            for (var i = 0; i < grey.length; i++) {
+                $("#" + grey[i]).css("background-color", "grey");
+                $("#" + grey[i]).removeAttr("onclick");
+            }
+        }
+
+        function win() {
+           
+
+            document.getElementById("player").innerHTML = '<h1>you win!</h1> <br> <h1>score: ' + score + '</h1>';
+            document.getElementById("computer").innerHTML = ' <img src="smile.jpeg" />';
+            document.$("#game").animate({
+                backgroundColor: 'red'
+
+            });
+
+        }
+
+
+        function check(num) {
+            if (num < 10 || num > 20) {
+                alert("יש לבחור מספרים בין 10-20");
+                document.getElementById("run").disabled = true;
+            }
+            else { document.getElementById("run").disabled = false; }
+
+        }
+    </script>
+
+
+</body>
+</html>
